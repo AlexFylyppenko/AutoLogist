@@ -194,15 +194,41 @@ body::before {
 .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text2); font-size: 14px; pointer-events: none; }
 
 .filter-select {
-  background: rgba(10,14,22,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 8px 12px; color: var(--text2); font-size: 13px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px; color: var(--text); font-size: 13px;
   outline: none; cursor: pointer; font-family: var(--sans);
+  transition: border 0.15s, background 0.15s;
 }
+.filter-select:hover { border-color: var(--border2); background: #0f2030; }
 .filter-select:focus { border-color: var(--accent); }
 
-select { background: rgba(10,14,22,0.92) !important; color: var(--text) !important; border-color: var(--border) !important; }
-select option { background: #0d1520 !important; color: var(--text) !important; padding: 8px 12px; }
+/* Unified select styling — card look, solid background */
+select {
+  background: var(--bg3) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  padding-right: 32px !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='none' stroke='%238b97a6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5l5 5 5-5'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+}
+select option {
+  background: #0d1e2e !important;
+  color: var(--text) !important;
+  padding: 10px 14px;
+  font-family: var(--sans);
+}
+/* iOS native picker styling (limited but improves first-row appearance) */
+select:focus option:checked {
+  background: rgba(0,229,160,0.15) !important;
+  color: var(--accent) !important;
+}
 
 /* ── Table ── */
 .table-wrap {
@@ -257,11 +283,18 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
 .icon-btn.del:hover { border-color: var(--danger); color: var(--danger); }
 
 .move-select {
-  background: rgba(10,14,22,0.85) !important; border: 1px solid var(--border2) !important;
-  border-radius: 6px !important; color: var(--text2) !important;
-  font-size: 11px !important; padding: 4px 6px !important;
-  cursor: pointer !important; max-width: 120px !important; font-family: var(--sans) !important;
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  color: var(--text) !important;
+  font-size: 11px !important;
+  padding: 4px 22px 4px 8px !important;
+  cursor: pointer !important;
+  max-width: 130px !important;
+  font-family: var(--sans) !important;
+  background-position: right 6px center !important;
 }
+.move-select:hover { border-color: var(--border2) !important; background: #0f2030 !important; }
 .move-select:focus { border-color: var(--accent) !important; outline: none !important; }
 
 .content-card {
