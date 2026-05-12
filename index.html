@@ -1311,11 +1311,29 @@ function renderScan() {
   document.getElementById('content-area').innerHTML = `
     <div class="scan-wrapper">
 
+      <!-- API Key input (needed outside Claude.ai) -->
+      <div id="scan-apikey-section" style="background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.15);border-radius:var(--radius);padding:12px 14px;${localStorage.getItem('fpvlab_apikey') ? 'display:none' : ''}">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:6px">🔑 CLAUDE API KEY</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5">Required for photo recognition. Get yours free at <b style="color:var(--text)">console.anthropic.com</b> → API Keys</div>
+        <div style="display:flex;gap:8px">
+          <input id="scan-apikey-input" type="password" placeholder="sk-ant-..." value="${localStorage.getItem('fpvlab_apikey')||''}"
+            style="flex:1;background:rgba(6,10,18,0.9);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none"/>
+          <button onclick="saveApiKey()" style="background:var(--accent);color:var(--bg);border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);white-space:nowrap">Save</button>
+        </div>
+      </div>
+      ${localStorage.getItem('fpvlab_apikey') ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15);border-radius:var(--radius)">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--ok)">🔑 API key saved</div>
+        <button onclick="clearApiKey()" style="background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)">change</button>
+      </div>` : ''}
+
       <!-- Source selector -->
+      <!-- Hidden file input — label click triggers it natively on iOS -->
+      <input type="file" id="scan-file-input-inline" accept="image/*" style="display:none" onchange="handleFileSelect(event)"/>
       <div class="scan-source-row">
-        <button class="scan-source-btn active" id="btn-source-upload" onclick="setScanMode('upload')">
+        <label for="scan-file-input-inline" class="scan-source-btn active" id="btn-source-upload" style="cursor:pointer;text-align:center">
           ${t('scanUpload')}
-        </button>
+        </label>
         <button class="scan-source-btn" id="btn-source-camera" onclick="setScanMode('camera')">
           ${t('scanCamera')}
         </button>
@@ -1323,7 +1341,6 @@ function renderScan() {
 
       <!-- Drop / camera zone -->
       <div class="scan-dropzone" id="scan-dropzone"
-           onclick="onDropzoneClick()"
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="onDrop(event)">
@@ -1658,9 +1675,17 @@ Return ONLY valid JSON, no markdown, no explanation:
       else if (bytes[0]===0x52 && bytes[1]===0x49) mediaType = 'image/webp';
     } catch(e) {}
 
+    const apiKey = localStorage.getItem('fpvlab_apikey') || '';
+    if (!apiKey) throw new Error('No API key set. Enter your Claude API key in the Scan tab.');
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-request-header': 'true',
+        'x-api-key': apiKey
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 400,
@@ -2269,6 +2294,22 @@ function deleteItem(id, fromModal) {
 function confirmDeleteItem(id) {
   items=items.filter(i=>i.id!==id);
   closeModal(); showToast(t('toastDeleted'),'warning'); render();
+}
+
+// ── API Key helpers ───────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('scan-apikey-input')?.value.trim();
+  if (!key || !key.startsWith('sk-ant-')) {
+    showToast('Invalid key — must start with sk-ant-', 'warning');
+    return;
+  }
+  localStorage.setItem('fpvlab_apikey', key);
+  showToast('API key saved ✓');
+  renderScan(); // re-render to show "saved" state
+}
+function clearApiKey() {
+  localStorage.removeItem('fpvlab_apikey');
+  renderScan();
 }
 
 // ── localStorage persistence ──────────────────────────────────
