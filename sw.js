@@ -1,5 +1,5 @@
-// FPV Lab PWA Service Worker v1.0
-const CACHE = 'fpv-lab-v1';
+// FPV Lab PWA Service Worker v2.0
+const CACHE = 'fpv-lab-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -28,7 +28,7 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch — cache-first for local assets, network-first for API calls
+// Fetch — network-first for the app shell, cache-first for static assets
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
@@ -38,22 +38,28 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache-first for everything else
+  // NETWORK-FIRST for the HTML app shell — ensures updates show immediately
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE).then(cache => cache.put(e.request, clone));
+        return response;
+      }).catch(() => caches.match(e.request).then(c => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // CACHE-FIRST for everything else (icons, fonts, manifest)
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(response => {
-        // Cache successful GET responses
         if (e.request.method === 'GET' && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE).then(cache => cache.put(e.request, clone));
         }
         return response;
-      }).catch(() => {
-        // Offline fallback — return index.html for navigation requests
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
       });
     })
   );
