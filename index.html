@@ -1701,7 +1701,7 @@ Rules:
 - For wires, cables, AWG → "cable"
 - For solder, flux → "solder" or "chem"
 - Keep technical codes unchanged (e.g. XT60, JST-GH, AWG, ELRS, VTX, PDB, BEC, ESC, FC, UART)
-- unit should be one of: pcs, m, kg, g, roll, set
+- unit should be one of: pcs, m, kg, g, l, ml, roll, set
 
 Return ONLY valid JSON, no markdown, no explanation:
 {
@@ -1908,7 +1908,7 @@ function openScanResultInModal() {
       <div class="field"><label>${t('fldSku')}</label><input id="f-sku" value="${nextSku()}"/></div>
       <div class="field"><label>${t('fldUnit')}</label>
         <select id="f-unit">
-          ${['pcs','m','kg','g','roll','set'].map(u=>`<option ${(scanResult.unit||'pcs')===u?'selected':''}>${u}</option>`).join('')}
+          ${['pcs','m','kg','g','l','ml','roll','set'].map(u=>`<option ${(scanResult.unit||'pcs')===u?'selected':''}>${u}</option>`).join('')}
         </select>
       </div>
       <div class="field full">
@@ -2078,7 +2078,7 @@ function openModal(type, id) {
         <div class="field"><label>${t('fldSku')}</label><input id="f-sku" value="${item?item.sku:nextSku()}"/></div>
         <div class="field"><label>${t('fldUnit')}</label>
           <select id="f-unit">
-            ${['pcs','m','kg','g','roll','set'].map(u=>`<option ${item&&item.unit===u?'selected':''}>${u}</option>`).join('')}
+            ${['pcs','m','kg','g','l','ml','roll','set'].map(u=>`<option ${item&&item.unit===u?'selected':''}>${u}</option>`).join('')}
           </select>
         </div>
         <div class="field full">
