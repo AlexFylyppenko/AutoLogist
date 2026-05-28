@@ -185,6 +185,22 @@ body::before {
 .stat-value.accent { color: var(--navy); }
 .stat-value.navy   { color: var(--navy); }
 
+/* ── Scroll-collapse animation pieces ── */
+.stat-label-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; position: relative; overflow: hidden;
+}
+.stat-num-inline {
+  font-family: var(--mono); font-weight: 700; font-size: 17px;
+  white-space: nowrap; opacity: 0; transform: translateX(20px);
+}
+.stat-num-inline.navy   { color: var(--navy); }
+.stat-num-inline.green  { color: var(--ok); }
+.stat-num-inline.yellow { color: var(--warn); }
+.stat-num-inline.red    { color: var(--danger); }
+.stat-value { overflow: hidden; }
+.inv-pinned { will-change: transform; }
+
 /* ── Filters ── */
 .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
 
@@ -244,6 +260,8 @@ select:focus option:checked {
 table { width: 100%; border-collapse: collapse; }
 thead tr { border-bottom: 1px solid rgba(34,211,238,0.25); background: rgba(34,211,238,0.07); }
 thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: #0a1622;
   padding: 10px 14px; text-align: left;
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.5px; color: var(--navy); font-family: var(--mono); white-space: nowrap;
@@ -1227,6 +1245,95 @@ function buildRows(filtered) {
   }).join('');
 }
 
+// ── Inventory scroll-collapse animation ───────────────────────
+let invScrollHandler = null;
+let invRafId = null;
+let invTargetP = 0;
+let invCurrentP = 0;
+
+function initInventoryScroll() {
+  const content = document.getElementById('content-area');
+  const pinned  = document.getElementById('inv-pinned');
+  const stats   = document.getElementById('inv-stats');
+  if (!content || !pinned || !stats) return;
+
+  const cards = Array.from(stats.querySelectorAll('.stat-card'));
+  const filters = document.getElementById('inv-filters');
+
+  const SCROLL_RANGE = 200;
+  const CARD_PAD_FULL = 16, CARD_PAD_MIN = 8;
+  const NUM_FONT_FULL = 28;
+  const STATS_GAP_FULL = 12, STATS_GAP_MIN = 8;
+  const BIG_NUM_HEIGHT_FULL = 34;
+
+  const lerp = (a,b,t) => a + (b-a)*t;
+  const clamp = v => Math.min(1, Math.max(0, v));
+
+  function applyProgress(p) {
+    stats.style.gap = lerp(STATS_GAP_FULL, STATS_GAP_MIN, p) + 'px';
+    const pad = lerp(CARD_PAD_FULL, CARD_PAD_MIN, p);
+    const bigOutP   = clamp(p / 0.6);
+    const inlineInP = clamp((p - 0.92) / 0.08);
+
+    cards.forEach(card => {
+      card.style.padding = pad + 'px';
+      const bigNum = card.querySelector('.stat-value');
+      const inlineNum = card.querySelector('.stat-num-inline');
+      if (bigNum) {
+        bigNum.style.opacity = (1 - bigOutP).toString();
+        bigNum.style.fontSize = lerp(NUM_FONT_FULL, 18, bigOutP) + 'px';
+        bigNum.style.height = lerp(BIG_NUM_HEIGHT_FULL, 0, bigOutP) + 'px';
+        bigNum.style.marginTop = lerp(4, 0, bigOutP) + 'px';
+      }
+      if (inlineNum) {
+        inlineNum.style.opacity = inlineInP.toString();
+        inlineNum.style.transform = `translateX(${lerp(20, 0, inlineInP)}px)`;
+      }
+    });
+
+    if (filters) {
+      const czP = clamp(p / 0.8);
+      filters.style.maxHeight = lerp(80, 0, czP) + 'px';
+      filters.style.opacity = (1 - czP).toString();
+      filters.style.marginBottom = lerp(16, 0, czP) + 'px';
+      filters.style.overflow = 'hidden';
+    }
+  }
+
+  function tick() {
+    const diff = invTargetP - invCurrentP;
+    if (Math.abs(diff) < 0.004) {
+      invCurrentP = invTargetP;
+      applyProgress(invCurrentP);
+      invRafId = null;
+      return;
+    }
+    let step = diff * 0.16;
+    if (Math.abs(step) > Math.abs(diff)) step = diff;
+    invCurrentP += step;
+    if (invCurrentP < 0) invCurrentP = 0;
+    if (invCurrentP > 1) invCurrentP = 1;
+    applyProgress(invCurrentP);
+    invRafId = requestAnimationFrame(tick);
+  }
+
+  function onScroll() {
+    const y = Math.max(0, content.scrollTop);
+    invTargetP = clamp(y / SCROLL_RANGE);
+    if (!invRafId) invRafId = requestAnimationFrame(tick);
+  }
+
+  // Remove any previous handler before attaching (re-renders)
+  if (invScrollHandler) content.removeEventListener('scroll', invScrollHandler);
+  invScrollHandler = onScroll;
+  content.addEventListener('scroll', invScrollHandler, { passive: true });
+
+  // Reset to current scroll position (preserves state on re-render)
+  invCurrentP = clamp(Math.max(0, content.scrollTop) / SCROLL_RANGE);
+  invTargetP = invCurrentP;
+  applyProgress(invCurrentP);
+}
+
 function renderInventory() {
   const filtered = items.filter(item => {
     const s = searchVal.toLowerCase();
@@ -1244,28 +1351,34 @@ function renderInventory() {
   ).join('');
 
   document.getElementById('content-area').innerHTML = `
-    <div class="stats">
-      <div class="stat-card ${filterStatus===''?'stat-active':''}" onclick="filterStatus='';render()" style="cursor:pointer">
-        <div class="stat-label navy">${t('statsTotal')}</div><div class="stat-value navy">${items.length}</div>
+    <div class="inv-pinned" id="inv-pinned">
+      <div class="stats" id="inv-stats">
+        <div class="stat-card ${filterStatus===''?'stat-active':''}" onclick="filterStatus='';render()" style="cursor:pointer">
+          <div class="stat-label-row"><span class="stat-label navy">${t('statsTotal')}</span><span class="stat-num-inline navy">${items.length}</span></div>
+          <div class="stat-value navy">${items.length}</div>
+        </div>
+        <div class="stat-card ${filterStatus==='ok'?'stat-active-ok':''}" onclick="filterStatus=filterStatus==='ok'?'':'ok';render()" style="cursor:pointer">
+          <div class="stat-label-row"><span class="stat-label green">${t('statsOk')}</span><span class="stat-num-inline green">${ok}</span></div>
+          <div class="stat-value green">${ok}</div>
+        </div>
+        <div class="stat-card ${filterStatus==='warn'?'stat-active-warn':''}" onclick="filterStatus=filterStatus==='warn'?'':'warn';render()" style="cursor:pointer">
+          <div class="stat-label-row"><span class="stat-label yellow">${t('statsWarn')}</span><span class="stat-num-inline yellow">${warn}</span></div>
+          <div class="stat-value yellow">${warn}</div>
+        </div>
+        <div class="stat-card ${filterStatus==='crit'?'stat-active-crit':''}" onclick="filterStatus=filterStatus==='crit'?'':'crit';render()" style="cursor:pointer">
+          <div class="stat-label-row"><span class="stat-label red">${t('statsCrit')}</span><span class="stat-num-inline red">${crit}</span></div>
+          <div class="stat-value red">${crit}</div>
+        </div>
       </div>
-      <div class="stat-card ${filterStatus==='ok'?'stat-active-ok':''}" onclick="filterStatus=filterStatus==='ok'?'':'ok';render()" style="cursor:pointer">
-        <div class="stat-label green">${t('statsOk')}</div><div class="stat-value green">${ok}</div>
+      <div class="filters" id="inv-filters">
+        <div class="search-wrap">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;line-height:1;pointer-events:none;z-index:2">🔎</span>
+          <input type="text" placeholder="${t('search')}" value="${searchVal}" oninput="searchVal=this.value;renderTableOnly()"/>
+        </div>
+        <select class="filter-select" onchange="filterCat=this.value;render()">
+          <option value="">${t('filterCat')}</option>${catOptions}
+        </select>
       </div>
-      <div class="stat-card ${filterStatus==='warn'?'stat-active-warn':''}" onclick="filterStatus=filterStatus==='warn'?'':'warn';render()" style="cursor:pointer">
-        <div class="stat-label yellow">${t('statsWarn')}</div><div class="stat-value yellow">${warn}</div>
-      </div>
-      <div class="stat-card ${filterStatus==='crit'?'stat-active-crit':''}" onclick="filterStatus=filterStatus==='crit'?'':'crit';render()" style="cursor:pointer">
-        <div class="stat-label red">${t('statsCrit')}</div><div class="stat-value red">${crit}</div>
-      </div>
-    </div>
-    <div class="filters">
-      <div class="search-wrap">
-        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;line-height:1;pointer-events:none;z-index:2">🔎</span>
-        <input type="text" placeholder="${t('search')}" value="${searchVal}" oninput="searchVal=this.value;renderTableOnly()"/>
-      </div>
-      <select class="filter-select" onchange="filterCat=this.value;render()">
-        <option value="">${t('filterCat')}</option>${catOptions}
-      </select>
     </div>
     <div class="table-wrap">
       <table>
@@ -1280,6 +1393,8 @@ function renderInventory() {
         <tbody>${buildRows(filtered)}</tbody>
       </table>
     </div>`;
+
+  initInventoryScroll();
 }
 
 function renderAlerts() {
