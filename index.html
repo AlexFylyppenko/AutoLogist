@@ -644,7 +644,7 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
 
 /* ── Mobile responsive ── */
 @media (max-width: 700px) {
-  .shell { flex-direction: column; }
+  .shell { flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
   .sidebar {
     width: 100%; min-width: unset; height: auto;
     position: fixed; bottom: 0; left: 0; right: 0; top: auto;
@@ -667,12 +667,12 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .sidebar-bottom { display: flex; align-items: center; padding: 6px 10px; border-top: none; border-left: 1px solid var(--border); }
   .lang-toggle { flex-direction: column; height: 52px; }
   .lang-btn { padding: 4px 8px; font-size: 10px; }
-  .main { padding-bottom: calc(65px + env(safe-area-inset-bottom)); }
+  .main { flex: 1; min-height: 0; padding-bottom: 0; }
+  .content { padding: 14px; padding-bottom: calc(75px + env(safe-area-inset-bottom)); }
   .topbar { padding-top: calc(10px + env(safe-area-inset-top)); }
   .topbar-title { font-size: 14px; }
   .btn { padding: 6px 10px; font-size: 12px; }
   #btn-add-cat { display: none; }
-  .content { padding: 14px; }
   .stats { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .stat-card { padding: 12px; }
   .stat-value { font-size: 22px; }
