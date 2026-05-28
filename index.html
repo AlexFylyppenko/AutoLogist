@@ -266,7 +266,14 @@ select:focus option:checked {
 }
 .table-hscroll {
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.tbody-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 .table-inner { min-width: 1010px; }
 .thead-row {
@@ -282,10 +289,6 @@ select:focus option:checked {
   color: var(--navy); font-family: var(--mono); white-space: nowrap;
 }
 .th.right { text-align: right; }
-.tbody-scroll {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
 .trow {
   display: grid;
   grid-template-columns: var(--col-template);
@@ -720,9 +723,9 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .stat-card { padding: 12px; }
   .stat-value { font-size: 22px; }
   .stat-label { font-size: 10px; }
-  .filters { gap: 6px; }
-  .search-wrap { min-width: unset; }
-  .filter-select { width: 100%; }
+  .filters { gap: 6px; flex-wrap: nowrap; }
+  .search-wrap { min-width: 0; flex: 1; }
+  .filter-select { width: auto; max-width: 44%; flex-shrink: 0; }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { min-width: 520px; }
   thead th { padding: 8px 10px; font-size: 10px; }
