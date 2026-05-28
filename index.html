@@ -200,15 +200,13 @@ body::before {
 .stat-num-inline.red    { color: var(--danger); }
 .stat-value { overflow: hidden; }
 .inv-pinned {
+  position: -webkit-sticky;
   position: sticky;
-  top: 0;
+  top: -1px;
   z-index: 8;
-  background: rgba(6,13,24,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  margin: -24px -24px 0;
-  padding: 24px 24px 0;
-  will-change: contents;
+  background: #060d18;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
 }
 
 /* ── Filters ── */
@@ -675,7 +673,6 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .btn { padding: 6px 10px; font-size: 12px; }
   #btn-add-cat { display: none; }
   .content { padding: 14px; }
-  .inv-pinned { margin: -14px -14px 0; padding: 14px 14px 0; }
   .stats { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .stat-card { padding: 12px; }
   .stat-value { font-size: 22px; }
@@ -920,6 +917,9 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Temporary scroll debug -->
+<div id="scroll-debug" style="position:fixed;top:60px;right:8px;z-index:999;background:rgba(0,0,0,0.8);color:#00e5a0;font-family:monospace;font-size:11px;padding:4px 8px;border-radius:4px;pointer-events:none">scrollTop:0 p:0.00</div>
 
 <!-- Hidden file input for scan upload -->
 <input type="file" id="scan-file-input" accept="image/*" style="display:none" onchange="handleFileSelect(event)"/>
@@ -1331,6 +1331,8 @@ function initInventoryScroll() {
   function onScroll() {
     const y = Math.max(0, content.scrollTop);
     invTargetP = clamp(y / SCROLL_RANGE);
+    const dbg = document.getElementById('scroll-debug');
+    if (dbg) dbg.textContent = `scrollTop:${Math.round(content.scrollTop)} p:${invTargetP.toFixed(2)}`;
     if (!invRafId) invRafId = requestAnimationFrame(tick);
   }
 
