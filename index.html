@@ -1392,6 +1392,7 @@ function initInventoryScroll() {
   }
 
   // Attach scroll listener to the tbody (the vertical scroller)
+  // Attach scroll listener to the new tbody (DOM was replaced on re-render)
   if (invScrollHandler && initInventoryScroll._lastTbody) {
     initInventoryScroll._lastTbody.removeEventListener('scroll', invScrollHandler);
   }
@@ -1404,11 +1405,21 @@ function initInventoryScroll() {
   initInventoryScroll._resizeHandler = sizeTable;
   window.addEventListener('resize', sizeTable);
 
-  // Preserve collapse state across re-renders
-  invCurrentP = clamp(Math.max(0, tbody.scrollTop) / SCROLL_RANGE);
-  invTargetP = invCurrentP;
-  // Defer sizing until layout settles
-  requestAnimationFrame(() => { sizeTable(); applyProgress(invCurrentP); });
+  // Restore previously-saved scroll position (preserves collapse state across re-renders like language switch)
+  const savedScroll = initInventoryScroll._savedScroll || 0;
+  // Defer until layout/sizing settles, then restore scroll + apply progress
+  requestAnimationFrame(() => {
+    sizeTable();
+    tbody.scrollTop = savedScroll;
+    invCurrentP = clamp(savedScroll / SCROLL_RANGE);
+    invTargetP = invCurrentP;
+    applyProgress(invCurrentP);
+  });
+
+  // Save scroll position on every scroll so the next re-render can restore it
+  tbody.addEventListener('scroll', () => {
+    initInventoryScroll._savedScroll = tbody.scrollTop;
+  }, { passive: true });
 }
 
 function renderInventory() {
