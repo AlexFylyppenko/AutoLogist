@@ -815,8 +815,12 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .nav-item { transition: padding 0.3s; }
   .logo-title, .nav-section, .nav-item span:last-child, .lang-toggle { transition: opacity 0.25s; }
 
+  /* Bound the whole shell to the viewport so the table card is height-limited
+     and shows as a proper card with a visible bottom border */
+  .shell { height: 100vh; height: 100dvh; overflow: hidden; }
+
   /* ── COMPACT PREVIEW (default in landscape) ── */
-  /* Table zoomed out as a thumbnail: scale down, widen to fill, no scroll */
+  /* Table zoomed out as a thumbnail (scale set by JS to fill width exactly), no scroll */
   body.inv-active #inv-table-card {
     position: relative; cursor: pointer; flex: 1; min-height: 0;
     overflow: hidden;
@@ -827,19 +831,8 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
     height: auto !important;      /* show natural content, zoomed out */
   }
   body.inv-active #inv-table-card .table-inner {
-    transform: scale(0.55);
     transform-origin: top left;
-    width: 182%;                  /* 1/0.55 so scaled width fills the card */
-    transition: transform 0.4s cubic-bezier(.4,0,.2,1), width 0.4s cubic-bezier(.4,0,.2,1);
-  }
-  /* Tap hint badge */
-  body.inv-active #inv-table-card::after {
-    content: '⤢'; position: absolute; top: 8px; right: 12px; z-index: 6;
-    font-size: 18px; color: var(--navy);
-    background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.4);
-    width: 30px; height: 30px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    transition: opacity 0.3s; pointer-events: none;
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
   }
 
   /* ── EXPANDED (after tapping table) ── */
@@ -866,14 +859,9 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .shell.lscape-expanded .search-wrap input { padding: 6px 10px 6px 28px; font-size: 12px; }
   .shell.lscape-expanded .filter-select { padding: 6px 10px; font-size: 12px; }
 
-  /* Table returns to normal scale + scrollable when expanded */
-  .shell.lscape-expanded #inv-table-card .table-inner {
-    transform: scale(1);
-    width: auto;
-  }
+  /* Table becomes scrollable when expanded (scale to 1 handled by JS) */
   .shell.lscape-expanded #inv-table-card .table-hscroll { overflow-x: auto; }
   .shell.lscape-expanded #inv-table-card .tbody-scroll { overflow-y: auto; }
-  .shell.lscape-expanded #inv-table-card::after { opacity: 0; }
 }
 </style>
 </head>
@@ -2876,8 +2864,33 @@ function isPhoneLandscape() {
   return window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
 }
 
-function clearCardInlineStyles() {
-  document.querySelectorAll('#inv-stats .stat-card').forEach(card => {
+function applyLandscapeTableZoom() {
+  const card = document.getElementById('inv-table-card');
+  if (!card) return;
+  const inner = card.querySelector('.table-inner');
+  const hscroll = card.querySelector('.table-hscroll');
+  if (!inner || !hscroll) return;
+  const NATURAL = 950; // sum of all column widths
+  if (isPhoneLandscape() && !lscapeExpanded) {
+    // Compact preview: zoom table so its fixed-width rows fill the card width exactly
+    const W = hscroll.clientWidth;
+    const scale = Math.max(0.3, Math.min(1, W / NATURAL));
+    inner.style.transformOrigin = 'top left';
+    inner.style.width = NATURAL + 'px';
+    inner.style.transform = `scale(${scale})`;
+  } else if (isPhoneLandscape() && lscapeExpanded) {
+    // Expanded: normal scale, natural width (horizontally scrollable)
+    inner.style.transform = 'scale(1)';
+    inner.style.width = '';
+  } else {
+    // Portrait / desktop: no transform
+    inner.style.transform = '';
+    inner.style.transformOrigin = '';
+    inner.style.width = '';
+  }
+}
+
+function clearCardInlineStyles() {  document.querySelectorAll('#inv-stats .stat-card').forEach(card => {
     card.style.padding = '';
     const bn = card.querySelector('.stat-value');
     const inl = card.querySelector('.stat-num-inline');
@@ -2904,11 +2917,13 @@ function applyLscapeState() {
   // CSS (compact/expanded) fully controls card appearance — otherwise inline styles
   // win over CSS and the cards won't shrink to pills when expanded.
   if (landscape) clearCardInlineStyles();
+  // Zoom the table to fill width in preview / normal scale when expanded
+  applyLandscapeTableZoom();
   // Re-size the inventory table after layout shifts
   if (typeof initInventoryScroll._resizeHandler === 'function') {
-    requestAnimationFrame(() => initInventoryScroll._resizeHandler());
-    setTimeout(() => initInventoryScroll._resizeHandler(), 200);
-    setTimeout(() => initInventoryScroll._resizeHandler(), 400);
+    requestAnimationFrame(() => { initInventoryScroll._resizeHandler(); applyLandscapeTableZoom(); });
+    setTimeout(() => { initInventoryScroll._resizeHandler(); applyLandscapeTableZoom(); }, 200);
+    setTimeout(() => { initInventoryScroll._resizeHandler(); applyLandscapeTableZoom(); }, 400);
   }
 }
 
