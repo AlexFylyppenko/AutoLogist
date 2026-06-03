@@ -860,6 +860,13 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .shell.lscape-expanded .filter-select { padding: 6px 10px; font-size: 12px; }
 
   /* Table becomes scrollable when expanded (scale to 1 handled by JS) */
+  /* Expanded: table fills to the bottom edge, scrollable, no card border (like before) */
+  .shell.lscape-expanded #inv-table-card {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    margin-bottom: 0;
+  }
   .shell.lscape-expanded #inv-table-card .table-hscroll { overflow-x: auto; }
   .shell.lscape-expanded #inv-table-card .tbody-scroll { overflow-y: auto; }
 }
