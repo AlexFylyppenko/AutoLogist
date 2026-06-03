@@ -795,6 +795,12 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
 
   .content { padding: 10px 14px; overflow: hidden; }
 
+  /* Make content a flex column so the table card is bounded and shows as a
+     proper rounded card with all borders (incl. bottom) in both states */
+  body.inv-active .content { display: flex; flex-direction: column; min-height: 0; }
+  body.inv-active .inv-pinned { flex: none; }
+  body.inv-active #inv-table-card { flex: 1; min-height: 0; margin-bottom: 0; }
+
   /* Cards ~1.5x smaller than portrait, full size in preview */
   .stats { gap: 8px; margin-bottom: 10px; transition: gap 0.35s, margin-bottom 0.35s; }
   .stat-card { padding: 8px 10px; transition: padding 0.35s, border-color 0.15s, background 0.15s; }
@@ -1344,6 +1350,8 @@ function render() {
   else if (view==='alerts')      renderAlerts();
   else if (view==='categories')  renderCategories();
   else if (view==='scan')        renderScan();
+  // Keep landscape compact/expanded state correct after re-render
+  if (view==='inventory' && typeof applyLscapeState === 'function') applyLscapeState();
 }
 
 function updateBadge() {} // intentionally empty
@@ -2868,18 +2876,36 @@ function isPhoneLandscape() {
   return window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
 }
 
+function clearCardInlineStyles() {
+  document.querySelectorAll('#inv-stats .stat-card').forEach(card => {
+    card.style.padding = '';
+    const bn = card.querySelector('.stat-value');
+    const inl = card.querySelector('.stat-num-inline');
+    if (bn) { bn.style.opacity=''; bn.style.fontSize=''; bn.style.height=''; bn.style.marginTop=''; }
+    if (inl) { inl.style.opacity=''; inl.style.transform=''; }
+  });
+  const stats = document.getElementById('inv-stats');
+  if (stats) stats.style.gap = '';
+  const filters = document.getElementById('inv-filters');
+  if (filters) { filters.style.maxHeight=''; filters.style.opacity=''; filters.style.marginBottom=''; filters.style.overflow=''; }
+}
+
 function applyLscapeState() {
   const shell = document.querySelector('.shell');
   if (!shell) return;
+  const landscape = isPhoneLandscape();
   // Only allow expanded class in phone landscape; portrait/desktop always normal
-  if (isPhoneLandscape() && lscapeExpanded) {
+  if (landscape && lscapeExpanded) {
     shell.classList.add('lscape-expanded');
   } else {
     shell.classList.remove('lscape-expanded');
   }
-  // Re-size the inventory table after layout shifts (cards shrink → table grows)
+  // In landscape, clear inline styles left by the portrait scroll animation so the
+  // CSS (compact/expanded) fully controls card appearance — otherwise inline styles
+  // win over CSS and the cards won't shrink to pills when expanded.
+  if (landscape) clearCardInlineStyles();
+  // Re-size the inventory table after layout shifts
   if (typeof initInventoryScroll._resizeHandler === 'function') {
-    // wait for CSS transition to progress, size a couple times for smoothness
     requestAnimationFrame(() => initInventoryScroll._resizeHandler());
     setTimeout(() => initInventoryScroll._resizeHandler(), 200);
     setTimeout(() => initInventoryScroll._resizeHandler(), 400);
