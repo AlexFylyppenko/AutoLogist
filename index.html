@@ -265,24 +265,19 @@ select:focus option:checked {
   display: flex; flex-direction: column;
 }
 .table-hscroll {
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto;                 /* single scroller for BOTH axes */
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
+  overscroll-behavior: contain;
+  flex: 1; min-height: 0;
 }
-.tbody-scroll {
-  overflow-y: auto;
-  overflow-x: clip;   /* don't create an X scroll container (would break sticky column) */
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-}
+.tbody-scroll { /* plain wrapper now — scrolling handled by .table-hscroll */ }
 .table-inner { min-width: 942px; }
 .thead-row {
   display: grid;
   grid-template-columns: var(--col-template);
   background: #0a1622;
   border-bottom: 1px solid rgba(34,211,238,0.25);
-  position: -webkit-sticky; position: sticky; top: 0; z-index: 5;
+  position: -webkit-sticky; position: sticky; top: 0; z-index: 6;
 }
 .th {
   padding: 10px 12px; font-size: 11px; font-weight: 700;
@@ -308,11 +303,11 @@ select:focus option:checked {
 .trow .tcell:nth-child(2) {
   position: -webkit-sticky; position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 4;
 }
 .thead-row .th:nth-child(2) {
   background: #0a1622;           /* header bg so scrolling cols hide behind */
-  z-index: 6;                    /* above body sticky + above scrolling header cells */
+  z-index: 7;                    /* corner: above everything */
 }
 .trow .tcell:nth-child(2) {
   background: #0a1019;           /* solid row bg so scrolling cols hide behind */
@@ -855,10 +850,6 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   }
   /* Preview only (shell NOT expanded): not scrollable, natural zoomed-out height */
   .shell:not(.lscape-expanded) #inv-table-card .table-hscroll { overflow: hidden; }
-  .shell:not(.lscape-expanded) #inv-table-card .tbody-scroll {
-    overflow: hidden;
-    height: auto !important;
-  }
   body.inv-active #inv-table-card .table-inner {
     transform-origin: top left;
     transition: transform 0.4s cubic-bezier(.4,0,.2,1);
@@ -896,8 +887,7 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
     background: transparent;
     margin-bottom: 0;
   }
-  .shell.lscape-expanded #inv-table-card .table-hscroll { overflow-x: auto; }
-  .shell.lscape-expanded #inv-table-card .tbody-scroll { overflow-y: auto; overflow-x: clip; }
+  .shell.lscape-expanded #inv-table-card .table-hscroll { overflow: auto; }
 }
 </style>
 </head>
@@ -1449,20 +1439,9 @@ function initInventoryScroll() {
   const lerp = (a,b,t) => a + (b-a)*t;
   const clamp = v => Math.min(1, Math.max(0, v));
 
-  // Size the tbody scroll area to fill remaining viewport height
+  // Scroller (.table-hscroll) is bounded by flex; just clear any stale inline height
   function sizeTable() {
-    const isLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
-    const expanded = document.querySelector('.shell')?.classList.contains('lscape-expanded');
-    if (isLandscape && !expanded) {
-      // Preview: table is zoomed-out auto height, don't constrain
-      tbody.style.height = '';
-      return;
-    }
-    const cardTop = tableCard.getBoundingClientRect().top;
-    const navH = isLandscape ? 14 : (64 + 8);
-    const avail = window.innerHeight - cardTop - navH;
-    const headerH = 40;
-    tbody.style.height = Math.max(140, avail - headerH) + 'px';
+    if (tbody) tbody.style.height = '';
   }
 
   function applyProgress(p) {
@@ -1531,35 +1510,26 @@ function initInventoryScroll() {
     invRafId = requestAnimationFrame(tick);
   }
 
+  const hscroll = tableCard.querySelector('.table-hscroll');
+
   function onScroll() {
-    const y = Math.max(0, tbody.scrollTop);
+    if (!hscroll) return;
+    const y = Math.max(0, hscroll.scrollTop);
     invTargetP = clamp(y / SCROLL_RANGE);
     if (!invRafId) invRafId = requestAnimationFrame(tick);
+    // Save vertical scroll position for re-render restore
+    initInventoryScroll._savedScroll = hscroll.scrollTop;
+    // Toggle frozen-column divider when scrolled horizontally
+    tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft > 4);
   }
 
-  // Attach scroll listener to the tbody (the vertical scroller)
-  // Attach scroll listener to the new tbody (DOM was replaced on re-render)
-  if (invScrollHandler && initInventoryScroll._lastTbody) {
-    initInventoryScroll._lastTbody.removeEventListener('scroll', invScrollHandler);
+  // Attach the combined scroll listener to the single scroller (.table-hscroll)
+  if (initInventoryScroll._lastHscroll && invScrollHandler) {
+    initInventoryScroll._lastHscroll.removeEventListener('scroll', invScrollHandler);
   }
   invScrollHandler = onScroll;
-  tbody.addEventListener('scroll', invScrollHandler, { passive: true });
-  initInventoryScroll._lastTbody = tbody;
-
-  // Horizontal scroll → toggle divider on the frozen Item column
-  const hscroll = tableCard.querySelector('.table-hscroll');
-  if (hscroll) {
-    const onHScroll = () => {
-      tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft > 4);
-    };
-    if (initInventoryScroll._lastHscroll && initInventoryScroll._hHandler) {
-      initInventoryScroll._lastHscroll.removeEventListener('scroll', initInventoryScroll._hHandler);
-    }
-    hscroll.addEventListener('scroll', onHScroll, { passive: true });
-    initInventoryScroll._lastHscroll = hscroll;
-    initInventoryScroll._hHandler = onHScroll;
-    onHScroll();
-  }
+  if (hscroll) hscroll.addEventListener('scroll', invScrollHandler, { passive: true });
+  initInventoryScroll._lastHscroll = hscroll;
 
   // Resize handler
   if (initInventoryScroll._resizeHandler) window.removeEventListener('resize', initInventoryScroll._resizeHandler);
@@ -1568,19 +1538,14 @@ function initInventoryScroll() {
 
   // Restore previously-saved scroll position (preserves collapse state across re-renders like language switch)
   const savedScroll = initInventoryScroll._savedScroll || 0;
-  // Defer until layout/sizing settles, then restore scroll + apply progress
   requestAnimationFrame(() => {
     sizeTable();
-    tbody.scrollTop = savedScroll;
+    if (hscroll) hscroll.scrollTop = savedScroll;
     invCurrentP = clamp(savedScroll / SCROLL_RANGE);
     invTargetP = invCurrentP;
     applyProgress(invCurrentP);
+    if (hscroll) tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft > 4);
   });
-
-  // Save scroll position on every scroll so the next re-render can restore it
-  tbody.addEventListener('scroll', () => {
-    initInventoryScroll._savedScroll = tbody.scrollTop;
-  }, { passive: true });
 }
 
 function renderInventory() {
