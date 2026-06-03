@@ -777,6 +777,69 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.success { border-color: var(--ok); color: var(--ok); }
 .toast.warning { border-color: var(--warn); color: var(--warn); }
+
+/* ═══════════════════════════════════════════════════════════
+   LANDSCAPE PHONE ONLY — compact base + tap-to-expand table
+   Targets phone landscape (short height), never portrait or desktop.
+   ═══════════════════════════════════════════════════════════ */
+@media (orientation: landscape) and (max-height: 600px) {
+  /* ── Compact base (always in landscape) ── */
+  .logo { padding: 0 16px; height: 40px; display: flex; flex-direction: column; justify-content: center;
+          transition: height 0.35s, padding 0.35s; }
+  .logo-title { font-size: 13px; transition: font-size 0.35s; }
+  .logo-sub { display: none; }   /* remove subtitle */
+
+  .topbar { height: 40px; padding: 0 16px; transition: height 0.35s, padding 0.35s; }
+  .topbar-title { font-size: 14px; transition: font-size 0.35s; }
+  .btn { padding: 6px 11px; font-size: 12px; transition: padding 0.35s, font-size 0.35s; }
+
+  .content { padding: 10px 14px; }
+
+  /* Cards ~1.5x smaller from the start */
+  .stats { gap: 8px; margin-bottom: 10px; transition: gap 0.35s, margin-bottom 0.35s; }
+  .stat-card { padding: 8px 10px; transition: padding 0.35s, border-color 0.15s, background 0.15s; }
+  .stat-value { font-size: 18px; margin-top: 2px; transition: font-size 0.3s, height 0.3s, opacity 0.3s, margin-top 0.3s; }
+  .stat-num-inline { font-size: 14px; transition: opacity 0.3s, transform 0.3s; }
+
+  .filters { transition: max-height 0.35s, opacity 0.35s, margin-bottom 0.35s, gap 0.35s; }
+  .search-wrap input { transition: padding 0.3s, font-size 0.3s; }
+  .filter-select { transition: padding 0.3s, font-size 0.3s; }
+
+  /* Sidebar width transition for expand */
+  .sidebar { transition: width 0.35s cubic-bezier(.4,0,.2,1), min-width 0.35s cubic-bezier(.4,0,.2,1); }
+  .nav-item { transition: padding 0.3s; }
+  .logo-title, .nav-section, .nav-item span:last-child, .lang-toggle { transition: opacity 0.25s; }
+
+  /* Table card hint that it's tappable */
+  body.inv-active #inv-table-card { position: relative; cursor: pointer; }
+
+  /* ── EXPANDED state (after tapping the table) ── */
+  /* Sidebar collapses to icons only */
+  .shell.lscape-expanded .sidebar { width: 60px; min-width: 60px; }
+  .shell.lscape-expanded .logo { height: 34px; padding: 0 4px; align-items: center; }
+  .shell.lscape-expanded .logo-title { font-size: 9px; letter-spacing: 0; }
+  .shell.lscape-expanded .nav-section { opacity: 0; max-height: 0; padding: 0; overflow: hidden; }
+  .shell.lscape-expanded .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  .shell.lscape-expanded .nav-item span:last-child { opacity: 0; width: 0; overflow: hidden; display: none; }
+  .shell.lscape-expanded .nav-item .icon { width: auto; }
+  .shell.lscape-expanded .lang-toggle { flex-direction: column; }
+  .shell.lscape-expanded .lang-btn { font-size: 9px; padding: 4px 2px; }
+
+  /* Topbar tighter */
+  .shell.lscape-expanded .topbar { height: 34px; }
+  .shell.lscape-expanded .logo { height: 34px; }
+
+  /* Cards shrink to pills — big number hidden, inline number shown */
+  .shell.lscape-expanded .stats { gap: 6px; margin-bottom: 6px; }
+  .shell.lscape-expanded .stat-card { padding: 6px 9px; }
+  .shell.lscape-expanded .stat-value { opacity: 0; height: 0; margin-top: 0; }
+  .shell.lscape-expanded .stat-num-inline { opacity: 1; transform: translateX(0); }
+
+  /* Search + dropdown shrink but STAY visible & usable */
+  .shell.lscape-expanded .filters { gap: 6px; margin-bottom: 6px; }
+  .shell.lscape-expanded .search-wrap input { padding: 5px 10px 5px 28px; font-size: 11px; }
+  .shell.lscape-expanded .filter-select { padding: 5px 8px; font-size: 11px; }
+}
 </style>
 </head>
 <body>
@@ -1328,10 +1391,12 @@ function initInventoryScroll() {
   // Size the tbody scroll area to fill remaining viewport height
   function sizeTable() {
     const cardTop = tableCard.getBoundingClientRect().top;
-    const navH = 64 + 8; // bottom nav + small margin
+    // Portrait has bottom nav (~72px); phone landscape uses side nav (no bottom bar)
+    const isLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
+    const navH = isLandscape ? 14 : (64 + 8);
     const avail = window.innerHeight - cardTop - navH;
     const headerH = 40;
-    tbody.style.height = Math.max(160, avail - headerH) + 'px';
+    tbody.style.height = Math.max(140, avail - headerH) + 'px';
   }
 
   function applyProgress(p) {
@@ -2747,10 +2812,61 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ── Landscape tap-to-expand table ────────────────────────────
+let lscapeExpanded = false;
+
+function isPhoneLandscape() {
+  return window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
+}
+
+function applyLscapeState() {
+  const shell = document.querySelector('.shell');
+  if (!shell) return;
+  // Only allow expanded class in phone landscape; portrait/desktop always normal
+  if (isPhoneLandscape() && lscapeExpanded) {
+    shell.classList.add('lscape-expanded');
+  } else {
+    shell.classList.remove('lscape-expanded');
+  }
+  // Re-size the inventory table after layout shifts (cards shrink → table grows)
+  if (typeof initInventoryScroll._resizeHandler === 'function') {
+    // wait for CSS transition to progress, size a couple times for smoothness
+    requestAnimationFrame(() => initInventoryScroll._resizeHandler());
+    setTimeout(() => initInventoryScroll._resizeHandler(), 200);
+    setTimeout(() => initInventoryScroll._resizeHandler(), 400);
+  }
+}
+
+// Tap the inventory table card to expand (delegated, survives re-renders)
+document.addEventListener('click', (e) => {
+  if (!isPhoneLandscape()) return;
+  const card = e.target.closest('#inv-table-card');
+  if (!card) return;
+  // Ignore taps on the action buttons inside rows (so they keep working)
+  if (e.target.closest('.icon-btn') || e.target.closest('button') || e.target.closest('a')) return;
+  if (!lscapeExpanded) {
+    lscapeExpanded = true;
+    applyLscapeState();
+  }
+});
+
+// Reset to compact when leaving landscape (rotate to portrait) or resizing
+window.addEventListener('resize', () => {
+  if (!isPhoneLandscape()) {
+    lscapeExpanded = false;   // reset so next landscape entry starts compact
+  }
+  applyLscapeState();
+});
+window.addEventListener('orientationchange', () => {
+  if (!isPhoneLandscape()) lscapeExpanded = false;
+  setTimeout(applyLscapeState, 100);
+});
+
 // ── Init ─────────────────────────────────────────────────────
 loadState();
 document.body.classList.toggle('inv-active', view === 'inventory');
 render();
+applyLscapeState();
 
 // Show iOS install hint after 2s (gives page time to load)
 setTimeout(showIOSInstallHint, 2000);
