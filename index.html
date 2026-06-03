@@ -783,19 +783,19 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
    Targets phone landscape (short height), never portrait or desktop.
    ═══════════════════════════════════════════════════════════ */
 @media (orientation: landscape) and (max-height: 600px) {
-  /* ── Compact base (always in landscape) ── */
+  /* ── Base landscape chrome (applies in both states) ── */
   .logo { padding: 0 16px; height: 40px; display: flex; flex-direction: column; justify-content: center;
           transition: height 0.35s, padding 0.35s; }
   .logo-title { font-size: 13px; transition: font-size 0.35s; }
-  .logo-sub { display: none; }   /* remove subtitle */
+  .logo-sub { display: none; }
 
   .topbar { height: 40px; padding: 0 16px; transition: height 0.35s, padding 0.35s; }
   .topbar-title { font-size: 14px; transition: font-size 0.35s; }
   .btn { padding: 6px 11px; font-size: 12px; transition: padding 0.35s, font-size 0.35s; }
 
-  .content { padding: 10px 14px; }
+  .content { padding: 10px 14px; overflow: hidden; }
 
-  /* Cards ~1.5x smaller from the start */
+  /* Cards ~1.5x smaller than portrait, full size in preview */
   .stats { gap: 8px; margin-bottom: 10px; transition: gap 0.35s, margin-bottom 0.35s; }
   .stat-card { padding: 8px 10px; transition: padding 0.35s, border-color 0.15s, background 0.15s; }
   .stat-value { font-size: 18px; margin-top: 2px; transition: font-size 0.3s, height 0.3s, opacity 0.3s, margin-top 0.3s; }
@@ -805,16 +805,38 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .search-wrap input { transition: padding 0.3s, font-size 0.3s; }
   .filter-select { transition: padding 0.3s, font-size 0.3s; }
 
-  /* Sidebar width transition for expand */
   .sidebar { transition: width 0.35s cubic-bezier(.4,0,.2,1), min-width 0.35s cubic-bezier(.4,0,.2,1); }
   .nav-item { transition: padding 0.3s; }
   .logo-title, .nav-section, .nav-item span:last-child, .lang-toggle { transition: opacity 0.25s; }
 
-  /* Table card hint that it's tappable */
-  body.inv-active #inv-table-card { position: relative; cursor: pointer; }
+  /* ── COMPACT PREVIEW (default in landscape) ── */
+  /* Table zoomed out as a thumbnail: scale down, widen to fill, no scroll */
+  body.inv-active #inv-table-card {
+    position: relative; cursor: pointer; flex: 1; min-height: 0;
+    overflow: hidden;
+  }
+  body.inv-active #inv-table-card .table-hscroll { overflow: hidden; }
+  body.inv-active #inv-table-card .tbody-scroll {
+    overflow: hidden;             /* not scrollable in preview */
+    height: auto !important;      /* show natural content, zoomed out */
+  }
+  body.inv-active #inv-table-card .table-inner {
+    transform: scale(0.55);
+    transform-origin: top left;
+    width: 182%;                  /* 1/0.55 so scaled width fills the card */
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1), width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  /* Tap hint badge */
+  body.inv-active #inv-table-card::after {
+    content: '⤢'; position: absolute; top: 8px; right: 12px; z-index: 6;
+    font-size: 18px; color: var(--navy);
+    background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.4);
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.3s; pointer-events: none;
+  }
 
-  /* ── EXPANDED state (after tapping the table) ── */
-  /* Sidebar collapses to icons only */
+  /* ── EXPANDED (after tapping table) ── */
   .shell.lscape-expanded .sidebar { width: 60px; min-width: 60px; }
   .shell.lscape-expanded .logo { height: 34px; padding: 0 4px; align-items: center; }
   .shell.lscape-expanded .logo-title { font-size: 9px; letter-spacing: 0; }
@@ -825,20 +847,27 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .shell.lscape-expanded .lang-toggle { flex-direction: column; }
   .shell.lscape-expanded .lang-btn { font-size: 9px; padding: 4px 2px; }
 
-  /* Topbar tighter */
   .shell.lscape-expanded .topbar { height: 34px; }
-  .shell.lscape-expanded .logo { height: 34px; }
 
-  /* Cards shrink to pills — big number hidden, inline number shown */
+  /* Cards → pills */
   .shell.lscape-expanded .stats { gap: 6px; margin-bottom: 6px; }
   .shell.lscape-expanded .stat-card { padding: 6px 9px; }
   .shell.lscape-expanded .stat-value { opacity: 0; height: 0; margin-top: 0; }
   .shell.lscape-expanded .stat-num-inline { opacity: 1; transform: translateX(0); }
 
-  /* Search + dropdown shrink but STAY visible & usable */
-  .shell.lscape-expanded .filters { gap: 6px; margin-bottom: 6px; }
-  .shell.lscape-expanded .search-wrap input { padding: 5px 10px 5px 28px; font-size: 11px; }
-  .shell.lscape-expanded .filter-select { padding: 5px 8px; font-size: 11px; }
+  /* Search + dropdown stay visible, slightly smaller */
+  .shell.lscape-expanded .filters { gap: 6px; margin-bottom: 8px; }
+  .shell.lscape-expanded .search-wrap input { padding: 6px 10px 6px 28px; font-size: 12px; }
+  .shell.lscape-expanded .filter-select { padding: 6px 10px; font-size: 12px; }
+
+  /* Table returns to normal scale + scrollable when expanded */
+  .shell.lscape-expanded #inv-table-card .table-inner {
+    transform: scale(1);
+    width: auto;
+  }
+  .shell.lscape-expanded #inv-table-card .table-hscroll { overflow-x: auto; }
+  .shell.lscape-expanded #inv-table-card .tbody-scroll { overflow-y: auto; }
+  .shell.lscape-expanded #inv-table-card::after { opacity: 0; }
 }
 </style>
 </head>
@@ -1390,9 +1419,14 @@ function initInventoryScroll() {
 
   // Size the tbody scroll area to fill remaining viewport height
   function sizeTable() {
-    const cardTop = tableCard.getBoundingClientRect().top;
-    // Portrait has bottom nav (~72px); phone landscape uses side nav (no bottom bar)
     const isLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
+    const expanded = document.querySelector('.shell')?.classList.contains('lscape-expanded');
+    if (isLandscape && !expanded) {
+      // Preview: table is zoomed-out auto height, don't constrain
+      tbody.style.height = '';
+      return;
+    }
+    const cardTop = tableCard.getBoundingClientRect().top;
     const navH = isLandscape ? 14 : (64 + 8);
     const avail = window.innerHeight - cardTop - navH;
     const headerH = 40;
@@ -1400,6 +1434,21 @@ function initInventoryScroll() {
   }
 
   function applyProgress(p) {
+    // In phone landscape, the collapse is tap-driven via CSS classes, not scroll.
+    // Skip the JS scroll animation and clear any inline styles it may have set.
+    const isLandscape = window.matchMedia('(orientation: landscape) and (max-height: 600px)').matches;
+    if (isLandscape) {
+      stats.style.gap = '';
+      cards.forEach(card => {
+        card.style.padding = '';
+        const bn = card.querySelector('.stat-value');
+        const inl = card.querySelector('.stat-num-inline');
+        if (bn) { bn.style.opacity=''; bn.style.fontSize=''; bn.style.height=''; bn.style.marginTop=''; }
+        if (inl) { inl.style.opacity=''; inl.style.transform=''; }
+      });
+      if (filters) { filters.style.maxHeight=''; filters.style.opacity=''; filters.style.marginBottom=''; filters.style.overflow=''; }
+      return;
+    }
     stats.style.gap = lerp(STATS_GAP_FULL, STATS_GAP_MIN, p) + 'px';
     const pad = lerp(CARD_PAD_FULL, CARD_PAD_MIN, p);
     const bigOutP   = clamp(p / 0.6);
