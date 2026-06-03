@@ -272,6 +272,7 @@ select:focus option:checked {
 }
 .tbody-scroll {
   overflow-y: auto;
+  overflow-x: clip;   /* don't create an X scroll container (would break sticky column) */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
@@ -317,11 +318,16 @@ select:focus option:checked {
   background: #0a1019;           /* solid row bg so scrolling cols hide behind */
 }
 .trow:hover .tcell:nth-child(2) { background: #0f2030; }
-/* subtle divider on the right edge of the frozen column */
+/* subtle divider on the right edge of the frozen column — only once scrolled */
 .thead-row .th:nth-child(2)::after,
 .trow .tcell:nth-child(2)::after {
   content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 1px;
   background: var(--border);
+  opacity: 0; transition: opacity 0.2s;
+}
+#inv-table-card.x-scrolled .thead-row .th:nth-child(2)::after,
+#inv-table-card.x-scrolled .trow .tcell:nth-child(2)::after {
+  opacity: 1;
 }
 .tbody-empty { padding: 50px 20px; text-align: center; color: var(--text3); }
 
@@ -891,7 +897,7 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
     margin-bottom: 0;
   }
   .shell.lscape-expanded #inv-table-card .table-hscroll { overflow-x: auto; }
-  .shell.lscape-expanded #inv-table-card .tbody-scroll { overflow-y: auto; }
+  .shell.lscape-expanded #inv-table-card .tbody-scroll { overflow-y: auto; overflow-x: clip; }
 }
 </style>
 </head>
@@ -1539,6 +1545,21 @@ function initInventoryScroll() {
   invScrollHandler = onScroll;
   tbody.addEventListener('scroll', invScrollHandler, { passive: true });
   initInventoryScroll._lastTbody = tbody;
+
+  // Horizontal scroll → toggle divider on the frozen Item column
+  const hscroll = tableCard.querySelector('.table-hscroll');
+  if (hscroll) {
+    const onHScroll = () => {
+      tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft > 4);
+    };
+    if (initInventoryScroll._lastHscroll && initInventoryScroll._hHandler) {
+      initInventoryScroll._lastHscroll.removeEventListener('scroll', initInventoryScroll._hHandler);
+    }
+    hscroll.addEventListener('scroll', onHScroll, { passive: true });
+    initInventoryScroll._lastHscroll = hscroll;
+    initInventoryScroll._hHandler = onHScroll;
+    onHScroll();
+  }
 
   // Resize handler
   if (initInventoryScroll._resizeHandler) window.removeEventListener('resize', initInventoryScroll._resizeHandler);
