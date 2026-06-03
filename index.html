@@ -1519,8 +1519,9 @@ function initInventoryScroll() {
     if (!invRafId) invRafId = requestAnimationFrame(tick);
     // Save vertical scroll position for re-render restore
     initInventoryScroll._savedScroll = hscroll.scrollTop;
-    // Toggle frozen-column divider when scrolled horizontally
-    tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft > 4);
+    // Toggle frozen-column divider only once the Item column has stuck
+    // (i.e. SKU column ~90px has scrolled behind it)
+    tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft >= 85);
   }
 
   // Attach the combined scroll listener to the single scroller (.table-hscroll)
@@ -1544,7 +1545,7 @@ function initInventoryScroll() {
     invCurrentP = clamp(savedScroll / SCROLL_RANGE);
     invTargetP = invCurrentP;
     applyProgress(invCurrentP);
-    if (hscroll) tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft > 4);
+    if (hscroll) tableCard.classList.toggle('x-scrolled', hscroll.scrollLeft >= 85);
   });
 }
 
