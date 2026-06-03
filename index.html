@@ -825,10 +825,11 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
     position: relative; cursor: pointer; flex: 1; min-height: 0;
     overflow: hidden;
   }
-  body.inv-active #inv-table-card .table-hscroll { overflow: hidden; }
-  body.inv-active #inv-table-card .tbody-scroll {
-    overflow: hidden;             /* not scrollable in preview */
-    height: auto !important;      /* show natural content, zoomed out */
+  /* Preview only (shell NOT expanded): not scrollable, natural zoomed-out height */
+  .shell:not(.lscape-expanded) #inv-table-card .table-hscroll { overflow: hidden; }
+  .shell:not(.lscape-expanded) #inv-table-card .tbody-scroll {
+    overflow: hidden;
+    height: auto !important;
   }
   body.inv-active #inv-table-card .table-inner {
     transform-origin: top left;
