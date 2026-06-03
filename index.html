@@ -255,7 +255,7 @@ select:focus option:checked {
 /* ── Table ── */
 /* Shared column template for header + rows (11 columns) */
 :root {
-  --col-template: 90px 140px 150px 50px 50px 56px 64px 64px 110px 80px 96px;
+  --col-template: 90px 140px 150px 50px 50px 56px 64px 96px 110px 80px 96px;
 }
 .table-card {
   background: rgba(10,14,22,0.69);
@@ -275,7 +275,7 @@ select:focus option:checked {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
-.table-inner { min-width: 950px; }
+.table-inner { min-width: 982px; }
 .thead-row {
   display: grid;
   grid-template-columns: var(--col-template);
@@ -287,6 +287,7 @@ select:focus option:checked {
   padding: 10px 12px; font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.5px;
   color: var(--navy); font-family: var(--mono); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .th.right { text-align: right; }
 .trow {
@@ -2877,7 +2878,7 @@ function applyLandscapeTableZoom() {
   const inner = card.querySelector('.table-inner');
   const hscroll = card.querySelector('.table-hscroll');
   if (!inner || !hscroll) return;
-  const NATURAL = 950; // sum of all column widths
+  const NATURAL = 982; // sum of all column widths
   if (isPhoneLandscape() && !lscapeExpanded) {
     // Compact preview: zoom table so its fixed-width rows fill the card width exactly
     const W = hscroll.clientWidth;
