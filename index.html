@@ -793,11 +793,10 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
   .topbar-title { font-size: 14px; transition: font-size 0.35s; }
   .btn { padding: 6px 11px; font-size: 12px; transition: padding 0.35s, font-size 0.35s; }
 
-  .content { padding: 10px 14px; overflow: hidden; }
+  .content { padding: 10px 14px; overflow-y: auto; }
 
-  /* Make content a flex column so the table card is bounded and shows as a
-     proper rounded card with all borders (incl. bottom) in both states */
-  body.inv-active .content { display: flex; flex-direction: column; min-height: 0; }
+  /* Inventory tab: table card handles scroll, so content itself doesn't scroll */
+  body.inv-active .content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   body.inv-active .inv-pinned { flex: none; }
   body.inv-active #inv-table-card { flex: 1; min-height: 0; margin-bottom: 0; }
 
