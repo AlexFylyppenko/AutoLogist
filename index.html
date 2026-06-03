@@ -300,6 +300,29 @@ select:focus option:checked {
 .trow:hover { background: var(--bg3); }
 .tcell { padding: 11px 12px; font-size: 13px; color: var(--text); white-space: normal; word-break: break-word; line-height: 1.35; }
 .tcell.right { text-align: right; }
+
+/* ── Frozen Item column ── */
+/* The Item cell (2nd column) sticks to the left edge; SKU + other columns scroll behind it */
+.thead-row .th:nth-child(2),
+.trow .tcell:nth-child(2) {
+  position: -webkit-sticky; position: sticky;
+  left: 0;
+  z-index: 3;
+}
+.thead-row .th:nth-child(2) {
+  background: #0a1622;           /* header bg so scrolling cols hide behind */
+  z-index: 6;                    /* above body sticky + above scrolling header cells */
+}
+.trow .tcell:nth-child(2) {
+  background: #0a1019;           /* solid row bg so scrolling cols hide behind */
+}
+.trow:hover .tcell:nth-child(2) { background: #0f2030; }
+/* subtle divider on the right edge of the frozen column */
+.thead-row .th:nth-child(2)::after,
+.trow .tcell:nth-child(2)::after {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 1px;
+  background: var(--border);
+}
 .tbody-empty { padding: 50px 20px; text-align: center; color: var(--text3); }
 
 .table-wrap {
