@@ -255,7 +255,7 @@ select:focus option:checked {
 /* ── Table ── */
 /* Shared column template for header + rows (11 columns) */
 :root {
-  --col-template: 90px 140px 150px 50px 50px 56px 64px 96px 110px 80px 96px;
+  --col-template: 90px 140px 110px 50px 50px 56px 64px 96px 110px 80px 96px;
 }
 .table-card {
   background: rgba(10,14,22,0.69);
@@ -275,7 +275,7 @@ select:focus option:checked {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
-.table-inner { min-width: 982px; }
+.table-inner { min-width: 942px; }
 .thead-row {
   display: grid;
   grid-template-columns: var(--col-template);
@@ -287,7 +287,6 @@ select:focus option:checked {
   padding: 10px 12px; font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.5px;
   color: var(--navy); font-family: var(--mono); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
 }
 .th.right { text-align: right; }
 .trow {
@@ -330,7 +329,7 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
 
 .cat-badge {
   display: inline-block; padding: 2px 8px; border-radius: 4px;
-  font-size: 11px; font-weight: 500; font-family: var(--mono); white-space: nowrap;
+  font-size: 11px; font-weight: 500; font-family: var(--mono); white-space: normal; line-height: 1.3;
 }
 
 .qty-cell { font-family: var(--mono); font-weight: 600; }
@@ -1377,7 +1376,7 @@ function buildRows(filtered) {
     <div class="trow">
       <div class="tcell"><span class="sku">${item.sku}</span></div>
       <div class="tcell"><div class="item-name">${itemName(item)}${item.notes?`<small>${item.notes}</small>`:''}</div></div>
-      <div class="tcell"><span class="cat-badge ${catColor(item.cat)}">${catName(item.cat)}</span></div>
+      <div class="tcell"><span class="cat-badge ${catColor(item.cat)}">${catName(item.cat).replace(/\s*\/\s*/g, ' /<br>')}</span></div>
       <div class="tcell" style="color:var(--text2)">${item.unit}</div>
       <div class="tcell qty-cell" style="color:var(--text3)">${item.min}</div>
       <div class="tcell qty-cell" style="color:var(--text3)">${item.opt}</div>
@@ -2878,7 +2877,7 @@ function applyLandscapeTableZoom() {
   const inner = card.querySelector('.table-inner');
   const hscroll = card.querySelector('.table-hscroll');
   if (!inner || !hscroll) return;
-  const NATURAL = 982; // sum of all column widths
+  const NATURAL = 942; // sum of all column widths
   if (isPhoneLandscape() && !lscapeExpanded) {
     // Compact preview: zoom table so its fixed-width rows fill the card width exactly
     const W = hscroll.clientWidth;
