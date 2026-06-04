@@ -304,6 +304,9 @@ select:focus option:checked {
   position: -webkit-sticky; position: sticky;
   left: 0;
   z-index: 4;
+  align-self: stretch;          /* fill the full row height so the solid bg fully
+                                   covers the scrolled-behind columns (no peeking) */
+  display: flex; align-items: center;
 }
 .thead-row .th:nth-child(2) {
   background: #0a1622;           /* header bg so scrolling cols hide behind */
@@ -313,12 +316,15 @@ select:focus option:checked {
   background: #0a1019;           /* solid row bg so scrolling cols hide behind */
 }
 .trow:hover .tcell:nth-child(2) { background: #0f2030; }
-/* subtle divider on the right edge of the frozen column — only once scrolled */
+/* ONE continuous divider line on the column's right edge — each cell's segment
+   extends 1px past its bottom to bridge the row border, so the line is unbroken.
+   Hidden until the Item column actually sticks (.x-scrolled). */
 .thead-row .th:nth-child(2)::after,
 .trow .tcell:nth-child(2)::after {
-  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 1px;
+  content: ''; position: absolute; top: 0; right: 0; bottom: -1px; width: 1px;
   background: var(--border);
   opacity: 0; transition: opacity 0.2s;
+  pointer-events: none;
 }
 #inv-table-card.x-scrolled .thead-row .th:nth-child(2)::after,
 #inv-table-card.x-scrolled .trow .tcell:nth-child(2)::after {
@@ -348,7 +354,7 @@ tbody tr:hover { background: var(--bg3); }
 td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: middle; }
 
 .sku { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-.item-name { font-weight: 500; }
+.item-name { font-weight: 500; min-width: 0; flex: 1; }
 .item-name small { display: block; font-size: 11px; color: var(--text3); font-weight: 400; margin-top: 1px; }
 
 .cat-badge {
