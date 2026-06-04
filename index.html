@@ -813,6 +813,23 @@ td { padding: 11px 14px; font-size: 13px; color: var(--text); vertical-align: mi
    Targets phone landscape (short height), never portrait or desktop.
    ═══════════════════════════════════════════════════════════ */
 @media (orientation: landscape) and (max-height: 600px) {
+  /* ── Modals: ~1.5x smaller so they fit the short landscape viewport ── */
+  .overlay { padding: 8px; }
+  .modal {
+    max-width: 380px; padding: 14px 16px; border-radius: 10px;
+    max-height: 94vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .modal-title { font-size: 12px; margin-bottom: 10px; }
+  .form-grid { gap: 8px; }
+  .field { gap: 3px; }
+  .field label { font-size: 9px; letter-spacing: 0.4px; }
+  .field input, .field select, .field textarea { padding: 6px 9px; font-size: 11px; }
+  .field textarea { min-height: 44px; }
+  .modal-footer { margin-top: 12px; gap: 6px; }
+  .modal .btn, .modal-footer .btn { padding: 6px 12px; font-size: 12px; }
+  .alert-section { margin-bottom: 10px; }
+  .alert-banner { padding: 8px 11px; font-size: 11px; margin-bottom: 6px; }
+
   /* ── Base landscape chrome (applies in both states) ── */
   .logo { padding: 0 16px; height: 40px; display: flex; flex-direction: column; justify-content: center;
           transition: height 0.35s, padding 0.35s; }
